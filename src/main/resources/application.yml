@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: smartgrowtent
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/smartgrowdb
+    username: smartgrow
+    password: 102030
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
