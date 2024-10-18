@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: smartGrowMysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: smartgrowdb
+      MYSQL_USER: smartgrow
+      MYSQL_PASSWORD: '102030'
+      MYSQL_ROOT_PASSWORD: '102030'
+    ports:
+      - '3306:3306'
+    volumes:
+      - smartGrowMysqlVol:/var/lib/mysql
+    networks:
+      - localnet
+
+networks:
+  localnet:
+    driver: bridge
+
+volumes:
+  smartGrowMysqlVol:
+    external: true
