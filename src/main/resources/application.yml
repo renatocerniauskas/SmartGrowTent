@@ -12,3 +12,6 @@ spring:
       ddl-auto: update
     open-in-view: false
 
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
