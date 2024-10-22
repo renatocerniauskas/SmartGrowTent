@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class GrowValuesService {
@@ -22,7 +22,11 @@ public class GrowValuesService {
         return repository.findByTimestampBetween(start, end);
     }
 
-    public List<GrowValues> getGrowValues24last() {
-        return getGrowValues(LocalDateTime.now().minusHours(24),  LocalDateTime.now());
+    public List<GrowValues> getGrowValuesLastHours(final int hours) {
+        return getGrowValues(LocalDateTime.now().minusHours(hours),  LocalDateTime.now());
+    }
+
+    public Optional<GrowValues> getGrowValuesLast() {
+        return Optional.ofNullable(repository.findTopByOrderByTimestampDesc());
     }
 }

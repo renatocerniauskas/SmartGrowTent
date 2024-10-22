@@ -15,9 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/chart")
+@RequestMapping("/api/chart/")
 public class ApiChartController {
 
     @Autowired
@@ -28,8 +29,13 @@ public class ApiChartController {
         return service.getGrowValues(LocalDateTime.parse(start), LocalDateTime.parse(end));
     }
 
-    @GetMapping("last24")
-    public List<GrowValues> getChartDataLast24() {
-        return service.getGrowValues24last();
+    @GetMapping("last-hours")
+    public List<GrowValues> getChartDataLastHours(@RequestParam("hours") int hours) {
+        return service.getGrowValuesLastHours(hours);
+    }
+
+    @GetMapping("last")
+    public Optional<GrowValues> getChartDataLast() {
+        return service.getGrowValuesLast();
     }
 }

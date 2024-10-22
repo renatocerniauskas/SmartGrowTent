@@ -5,24 +5,6 @@
         google.charts.load('current', {'packages':['corechart']});
         google.charts.setOnLoadCallback(drawChart);
 
-        function calculateVPD(temperature, humidity) {
-            // Calcular a pressão de saturação (Es)
-            var Es = 0.6108 * Math.exp((17.27 * temperature) / (temperature + 237.3));
-            // Calcular a pressão atual do vapor (Ea)
-            var Ea = Es * (humidity / 100);
-            // Calcular o VPD
-            var VPD = Es - Ea;
-            return VPD;
-        }
-
-        function calculateIdealHumidity(temperature, idealVPD) {
-            // Calcular a pressão de saturação (Es)
-            var Es = 0.6108 * Math.exp((17.27 * temperature) / (temperature + 237.3));
-            // Calcular a umidade relativa ideal para atingir o VPD ideal
-            var idealHumidity = ((Es - idealVPD) / Es) * 100;
-            return idealHumidity;
-        }
-
         function drawChart() {
 
             //============================ TEMPERATURA ============================
@@ -60,94 +42,6 @@
                     const chart = new google.visualization.LineChart(document.getElementById('div_chart_temp'));
                     chart.draw(dataTable, options);
                 });
-
-
-
-
-          //============================ UMIDADE ============================
-          fetch('/api/chart/last24')
-                .then(response => response.json())
-                .then(data => {
-                    const formattedData = data.map(item => [
-                        new Date(item.timestamp),
-                        item.humidity,
-                        80
-                    ]);
-
-                    const dataTable = new google.visualization.DataTable();
-                    dataTable.addColumn('datetime', 'Hora');
-                    dataTable.addColumn('number', 'Umidade %H');
-                    dataTable.addColumn('number', 'Limite');
-                    dataTable.addRows(formattedData);
-
-                    const options = {
-                        title: 'Umidade',
-                        legend: { position: 'bottom' },
-                        hAxis: {
-                          title: 'Hora'
-                        },
-                        vAxis: {
-                          title: 'Valores'
-                        },
-                        series: {
-                            0: { color: 'blue' },
-                            1: { lineDashStyle: [4, 4], color: 'red' },
-                        }
-
-                    };
-
-                    const chart = new google.visualization.LineChart(document.getElementById('div_chart_humid'));
-                    chart.draw(dataTable, options);
-                });
-
-
-
-          //============================ TEMPERATURA/HUMIDADE VPD============================
-          fetch('/api/chart/last24')
-                .then(response => response.json())
-                .then(data => {
-                    const formattedData = data.map(item => [
-                        new Date(item.timestamp),
-                        item.temperature,
-                        30,
-                        item.humidity,
-                        calculateIdealHumidity(item.temperature, 0.57),
-                        calculateIdealHumidity(item.temperature, 0.85),
-                        calculateIdealHumidity(item.temperature, 1.15)
-                    ]);
-
-                    const dataTable = new google.visualization.DataTable();
-                    dataTable.addColumn('datetime', 'Hora');
-                    dataTable.addColumn('number', 'Temperatura °C');
-                    dataTable.addColumn('number', 'Limite');
-                    dataTable.addColumn('number', 'Humidade %H');
-                    dataTable.addColumn('number', 'VPD 0,57 kPa');
-                    dataTable.addColumn('number', 'VPD 0,85 kPa');
-                    dataTable.addColumn('number', 'VPD 1,15 kPa');
-                    dataTable.addRows(formattedData);
-
-                    const options = {
-                        title: 'Temperatura/Umidade com VPD',
-                        legend: { position: 'bottom' },
-                        hAxis: {
-                          title: 'Hora'
-                        },
-                        vAxis: {
-                          title: 'Valores'
-                        },
-                        series: {
-                            0: { lineDashStyle: [4, 0], color: 'green' },  // Linha para temperatura
-                            1: { lineDashStyle: [4, 4], color: 'red' },    // Linha de threshold para temperatura
-                            2: { lineDashStyle: [4, 0], color: 'blue' },   // Linha para umidade
-                            3: { lineDashStyle: [2, 2], color: 'pink' }, // Linha para umidade ideal (0.57 kPa)
-                            4: { lineDashStyle: [2, 2], color: 'orange' }, // Linha para umidade ideal (0.85 kPa)
-                            5: { lineDashStyle: [2, 2], color: 'purple' }  // Linha para umidade ideal (1.15 kPa)
-                        }
-                    };
-                    const chart = new google.visualization.LineChart(document.getElementById('div_chart'));
-                    chart.draw(dataTable, options);
-                });
-
         }
     </script>
 </head>
