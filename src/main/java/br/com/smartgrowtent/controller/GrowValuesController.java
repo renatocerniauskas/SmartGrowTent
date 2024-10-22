@@ -2,17 +2,15 @@ package br.com.smartgrowtent.controller;
 
 import br.com.smartgrowtent.models.GrowValues;
 import br.com.smartgrowtent.repositories.GrowValuesRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @RestController
 @ResponseBody
 @RequestMapping("/smartgrowtent/api/grow-values")
@@ -27,10 +25,15 @@ public class GrowValuesController {
     }
 
     @PostMapping
-    public ResponseEntity<GrowValues> postGrowValues(@RequestBody GrowValues growValues) {
-        growValues.setDateTime(LocalDateTime.now());
+    public ResponseEntity<GrowValues> postGrowValues(@RequestParam Double temperature, Double humidity) {
+        LocalDateTime localDateTime = LocalDateTime.now();
+        log.info("gravando dado na tabela: timestamp={} teperatura={} humidade={}", localDateTime, temperature, humidity);
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                repository.save(growValues)
+                repository.save(GrowValues.builder()
+                        .temperature(temperature)
+                        .humidity(humidity)
+                        .timestamp(localDateTime)
+                        .build())
         );
     }
 }

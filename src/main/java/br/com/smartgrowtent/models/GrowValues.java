@@ -10,13 +10,13 @@ import java.time.LocalDateTime;
 @Entity @Builder @Data
 @AllArgsConstructor @NoArgsConstructor
 @Table(name = "grow_values")
-@EqualsAndHashCode(of = "dateTime")
+@EqualsAndHashCode(of = "timestamp")
 public class GrowValues implements Serializable {
 
     @Id
     @Column(nullable = false)
-    @JsonProperty("dateTime")
-    private LocalDateTime dateTime;
+    @JsonProperty("timestamp")
+    private LocalDateTime timestamp;
 
     @Column(nullable = false)
     @JsonProperty("temperature")

@@ -1,8 +1,7 @@
-version: '3.8'
 
 services:
   mysql:
-    image: mysql:latest
+    image: hypriot/rpi-mysql
     container_name: smartGrowMysql
     restart: always
     environment:
@@ -10,6 +9,7 @@ services:
       MYSQL_USER: smartgrow
       MYSQL_PASSWORD: '102030'
       MYSQL_ROOT_PASSWORD: '102030'
+      TZ: America/Sao_Paul
     ports:
       - '3306:3306'
     volumes:
@@ -18,7 +18,7 @@ services:
       - localnet
 
   smartGrowApp:
-    image: openjdk:24-oraclelinux9
+    image: vljubovic/ignite:2.14.0-jdk17-4
     container_name: smartGrowApp
     restart: always
     depends_on:
@@ -26,12 +26,13 @@ services:
     ports:
       - '8080:8080'  # Certifique-se de que a porta corresponde à porta exposta pela sua aplicação
     volumes:
-      - ../target/smartgrowtent-0.0.1-SNAPSHOT.jar:/app/smartgrowtent-0.0.1-SNAPSHOT.jar
+      - ./smartgrowtent-0.0.1-SNAPSHOT.jar:/app/smartgrowtent-0.0.1-SNAPSHOT.jar
     command: [ "java", "-jar", "/app/smartgrowtent-0.0.1-SNAPSHOT.jar" ]
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://smartGrowMysql:3306/smartgrowdb
       SPRING_DATASOURCE_USERNAME: smartgrow
       SPRING_DATASOURCE_PASSWORD: '102030'
+      TZ: America/Sao_Paulo
     networks:
       - localnet
 

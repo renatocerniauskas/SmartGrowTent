@@ -3,45 +3,33 @@ package br.com.smartgrowtent.controller;
 
 import br.com.smartgrowtent.models.GrowValues;
 import br.com.smartgrowtent.repositories.GrowValuesRepository;
+import br.com.smartgrowtent.service.GrowValuesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/chart")
 public class ApiChartController {
 
     @Autowired
-    GrowValuesRepository repository;
+    private GrowValuesService service;
 
-
-
-    @GetMapping("/api/chart")
-    public List<Object[]> getChartData() {
-        // Dados de exemplo
-        List<Object[]> chartData = Arrays.asList(
-                new Object[]{"Categoria", "Valor"},
-                new Object[]{"A", 30},
-                new Object[]{"B", 70},
-                new Object[]{"C", 50}
-        );
-        return chartData;
+    @GetMapping
+    public List<GrowValues> getChartData(@RequestParam("start") String start, @RequestParam("end") String end) {
+        return service.getGrowValues(LocalDateTime.parse(start), LocalDateTime.parse(end));
     }
 
-    @GetMapping("/api/chart2")
-    public List<Object[]> getChartData2() {
-        // Suponha que você tenha um serviço que retorna os dados do gráfico
-        List<GrowValues> growValues = repository.findAll();
-
-        List<Object[]> chartData = Arrays.asList(
-                new Object[]{"Categoria", "Valor"},
-                new Object[]{growValues.getFirst().getTemperature(), growValues.getFirst().getHumidity()}
-        );
-        return chartData;
+    @GetMapping("last24")
+    public List<GrowValues> getChartDataLast24() {
+        return service.getGrowValues24last();
     }
-
 }
