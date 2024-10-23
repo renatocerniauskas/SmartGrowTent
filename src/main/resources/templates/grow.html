@@ -5,16 +5,6 @@
         google.charts.load('current', {'packages':['corechart']});
         google.charts.setOnLoadCallback(initCharts);
 
-        function calculateVPD(temperature, humidity) {
-            // Calcular a pressão de saturação (Es)
-            var Es = 0.6108 * Math.exp((17.27 * temperature) / (temperature + 237.3));
-            // Calcular a pressão atual do vapor (Ea)
-            var Ea = Es * (humidity / 100);
-            // Calcular o VPD
-            var VPD = Es - Ea;
-            return VPD;
-        }
-
         function calculateIdealHumidity(temperature, idealVPD) {
             // Calcular a pressão de saturação (Es)
             var Es = 0.6108 * Math.exp((17.27 * temperature) / (temperature + 237.3));

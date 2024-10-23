@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Gráficos de Gauge com Opções Personalizadas</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', {'packages':['gauge']});
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+            fetchDataAndUpdateCharts();
+
+            // Atualiza os gráficos a cada minuto (60000 ms)
+            setInterval(fetchDataAndUpdateCharts, 60000);
+        }
+
+        function fetchDataAndUpdateCharts() {
+            fetch('/api/chart/last')
+                .then(response => response.json())
+                .then(latestData => {
+                    // Verifica se há dados disponíveis
+                    if (!latestData) {
+                        console.error('Nenhum dado disponível para atualizar os gráficos.');
+                        return;
+                    }
+
+                    // Calcula o VPD usando a função fornecida
+                    const vpdValue = calculateVPD(latestData.temperature, latestData.humidity);
+
+                    // Dados para cada gauge
+                    var dataTemperature = google.visualization.arrayToDataTable([
+                        ['Label', 'Value'],
+                        ['Temperatura', latestData.temperature]
+                    ]);
+
+                    var dataHumidity = google.visualization.arrayToDataTable([
+                        ['Label', 'Value'],
+                        ['Umidade', latestData.humidity]
+                    ]);
+
+                    var dataVPD = google.visualization.arrayToDataTable([
+                        ['Label', 'Value'],
+                        ['VPD', vpdValue]
+                    ]);
+
+                    var dataECO2 = google.visualization.arrayToDataTable([
+                        ['Label', 'Value'],
+                        ['eCO₂', latestData.eco2]
+                    ]);
+
+                    var dataETVOC = google.visualization.arrayToDataTable([
+                        ['Label', 'Value'],
+                        ['eTVOC', latestData.etvoc]
+                    ]);
+
+                    // Opções específicas para cada gauge
+
+                    // Opções para Temperatura
+                    var optionsTemperature = {
+                        width: 400, height: 120,
+                        redFrom: 30, redTo: 50,
+                        yellowFrom: 25, yellowTo: 30,
+                        minorTicks: 5,
+                        max: 50,
+                        min: 0,
+                        animation: { duration: 500 },
+                        greenFrom: 0, greenTo: 25
+                    };
+
+                    // Opções para Umidade
+                    var optionsHumidity = {
+                        width: 400, height: 120,
+                        redFrom: 0, redTo: 30,
+                        yellowFrom: 30, yellowTo: 50,
+                        minorTicks: 5,
+                        max: 100,
+                        min: 0,
+                        animation: { duration: 500 },
+                        greenFrom: 50, greenTo: 100
+                    };
+
+                    // Opções para VPD
+                    var optionsVPD = {
+                        width: 400, height: 120,
+                        redFrom: 1.5, redTo: 3,
+                        yellowFrom: 1, yellowTo: 1.5,
+                        minorTicks: 0.1,
+                        max: 3,
+                        min: 0,
+                        animation: { duration: 500 },
+                        greenFrom: 0, greenTo: 1
+                    };
+
+                    // Opções para eCO₂
+                    var optionsECO2 = {
+                        width: 400, height: 120,
+                        redFrom: 1200, redTo: 2000,
+                        yellowFrom: 800, yellowTo: 1200,
+                        minorTicks: 100,
+                        max: 2000,
+                        min: 0,
+                        animation: { duration: 500 },
+                        greenFrom: 0, greenTo: 800
+                    };
+
+                    // Opções para eTVOC
+                    var optionsETVOC = {
+                        width: 400, height: 120,
+                        redFrom: 500, redTo: 1000,
+                        yellowFrom: 200, yellowTo: 500,
+                        minorTicks: 50,
+                        max: 1000,
+                        min: 0,
+                        animation: { duration: 500 },
+                        greenFrom: 0, greenTo: 200
+                    };
+
+                    // Desenha cada gauge com suas opções específicas
+                    var chartTemperature = new google.visualization.Gauge(document.getElementById('chart_temperature'));
+                    chartTemperature.draw(dataTemperature, optionsTemperature);
+
+                    var chartHumidity = new google.visualization.Gauge(document.getElementById('chart_humidity'));
+                    chartHumidity.draw(dataHumidity, optionsHumidity);
+
+                    var chartVPD = new google.visualization.Gauge(document.getElementById('chart_vpd'));
+                    chartVPD.draw(dataVPD, optionsVPD);
+
+                    var chartECO2 = new google.visualization.Gauge(document.getElementById('chart_eco2'));
+                    chartECO2.draw(dataECO2, optionsECO2);
+
+                    var chartETVOC = new google.visualization.Gauge(document.getElementById('chart_etvoc'));
+                    chartETVOC.draw(dataETVOC, optionsETVOC);
+
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar dados:', error);
+                });
+        }
+
+        function calculateVPD(temperature, humidity) {
+            // Calcula a pressão de saturação (Es)
+            var Es = 0.6108 * Math.exp((17.27 * temperature) / (temperature + 237.3));
+            // Calcula a pressão real de vapor (Ea)
+            var Ea = Es * (humidity / 100);
+            // Calcula o VPD
+            var VPD = Es - Ea;
+            // Retorna o VPD em kPa
+            return parseFloat(VPD.toFixed(2));
+        }
+    </script>
+</head>
+<body>
+<div>
+    <h2>Germinação (0-2 semanas):</h2>
+    <p>Temperatura ideal: 20°C a 25°C.</p>
+    <p>Umidade ideal: 70% a 80%.</p>
+    <p>VPD ideal: 0.4 - 0.8 kPa.</p>
+    <p>Nível de CO₂ ideal: 300 - 400 ppm.</p>
+    <p>Nível de eTVOC ideal: 50 - 150 ppb (partes por bilhão).</p>
+
+    <h2>Fase vegetativa (2 semanas - início da floração)</h2>
+    <p>Temperatura ideal (luz acesa): 22°C a 28°C.</p>
+    <p>Temperatura ideal (luz apagada): 18°C a 22°C.</p>
+    <p>Umidade ideal: 55% a 70%.</p>
+    <p>VPD ideal: 0.8 - 1.2 kPa.</p>
+    <p>Nível de CO₂ ideal: 600 - 1000 ppm.</p>
+    <p>Nível de eTVOC ideal: 100 - 300 ppb.</p>
+
+    <h2>Fase de floração (início da floração - colheita):</h2>
+    <p>Temperatura ideal (luz acesa): 20°C a 26°C.</p>
+    <p>Temperatura ideal (luz apagada): 17°C a 21°C.</p>
+    <p>Umidade ideal: 40% a 50%.</p>
+    <p>VPD ideal: 1.2 - 1.6 kPa.</p>
+    <p>Nível de CO₂ ideal: 800 - 1200 ppm.</p>
+    <p>Nível de eTVOC ideal: 150 - 400 ppb.</p>
+
+    <h2>Fase final de floração (últimas 2 semanas antes da colheita):</h2>
+    <p>Temperatura ideal (luz acesa): 18°C a 24°C.</p>
+    <p>Temperatura ideal (luz apagada): 15°C a 20°C.</p>
+    <p>Umidade ideal: 30% a 40%.</p>
+    <p>VPD ideal: 1.4 - 1.8 kPa.</p>
+    <p>Nível de CO₂ ideal: 400 - 600 ppm.</p>
+    <p>Nível de eTVOC ideal: 100 - 300 ppb.</p>
+</div>
+<h2>Gráficos de Gauge com Opções Personalizadas</h2>
+<div style="display: flex; flex-wrap: wrap;">
+    <div id="chart_temperature" style="width: 120; height: 120px; margin: 10px;"></div>
+    <div id="chart_humidity" style="width: 120; height: 120px; margin: 10px;"></div>
+    <div id="chart_vpd" style="width: 120; height: 120px; margin: 10px;"></div>
+    <div id="chart_eco2" style="width: 120; height: 120px; margin: 10px;"></div>
+    <div id="chart_etvoc" style="width: 120; height: 120px; margin: 10px;"></div>
+</div>
+</body>
+</html>
