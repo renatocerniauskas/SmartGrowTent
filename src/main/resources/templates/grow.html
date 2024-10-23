@@ -1,10 +1,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta http-equiv="refresh" content="60">
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
         google.charts.load('current', {'packages':['corechart']});
-        google.charts.setOnLoadCallback(drawCharts);
+        google.charts.setOnLoadCallback(initCharts);
 
         function calculateVPD(temperature, humidity) {
             // Calcular a pressão de saturação (Es)
@@ -24,8 +23,22 @@
             return idealHumidity;
         }
 
-        function drawCharts() {
-            fetch('/api/chart/last-hours?hours=6')
+        function initCharts() {
+            let storedHours = localStorage.getItem('selectedHours');
+            if (!storedHours) {
+                storedHours = '6';
+            }
+            const select = document.getElementById('hoursSelect');
+            select.value = storedHours;
+            drawCharts(storedHours);
+            setInterval(function() {
+                console.log('setInterval chamou updateCharts');
+                updateCharts();
+            }, 60000); // Atualiza a cada 60.000 ms (60 segundos)
+        }
+
+        function drawCharts(hours = 6) {
+            fetch(`/api/chart/last-hours?hours=${hours}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`Erro ao buscar dados: ${response.status} ${response.statusText}`);
@@ -37,14 +50,23 @@
                     drawHumidityChart(data);
                     drawVpdChart(data);
                     drawHumidityVpdChart(data);
+                    drawEco2Chart(data);
+                    drawEvtocChart(data);
                 })
                 .catch(error => {
                     console.error('Erro ao carregar os gráficos:', error);
                     alert('Ocorreu um erro ao carregar os gráficos. Por favor, tente novamente mais tarde.');
                 });
-}
+        }
 
+        function updateCharts() {
+            const select = document.getElementById('hoursSelect');
+            const selectedHours = select.value;
+            localStorage.setItem('selectedHours', selectedHours);
+            drawCharts(selectedHours);
+        }
 
+        //==================== CHART TEMPERATURA ====================
         function drawTemperatureChart(data) {
             const formattedData = data.map(item => [
                 new Date(item.timestamp),
@@ -73,6 +95,7 @@
             chart.draw(dataTable, options);
         }
 
+        //==================== CHART UMIDADE ====================
         function drawHumidityChart(data) {
             const formattedData = data.map(item => [
                 new Date(item.timestamp),
@@ -101,21 +124,26 @@
             chart.draw(dataTable, options);
         }
 
+        //==================== CHART UMIDADE COM VPD VEG====================
         function drawHumidityVpdChart(data) {
             const formattedData = data.map(item => [
                 new Date(item.timestamp),
                 item.humidity,
+                calculateIdealHumidity(item.temperature, 0.42),
                 calculateIdealHumidity(item.temperature, 0.57),
+                calculateIdealHumidity(item.temperature, 0.73)
             ]);
 
             const dataTable = new google.visualization.DataTable();
             dataTable.addColumn('datetime', 'Hora');
             dataTable.addColumn('number', 'Humidade %H');
+            dataTable.addColumn('number', 'VPD 0,42 kPa');
             dataTable.addColumn('number', 'VPD 0,57 kPa');
+            dataTable.addColumn('number', 'VPD 0,73 kPa');
             dataTable.addRows(formattedData);
 
             const options = {
-                title: 'Umidade com VPD',
+                title: 'Umidade com VPD MUDA/VEGETATIVO',
                 legend: { position: 'bottom' },
                 hAxis: {
                   title: 'Hora'
@@ -124,14 +152,17 @@
                   title: 'Valores'
                 },
                 series: {
-                    0: { lineDashStyle: [4, 0], color: 'blue' },   // Linha para umidade
-                    1: { lineDashStyle: [2, 2], color: 'purple' }  // Linha para umidade ideal (1.15 kPa)
+                    0: {color: 'blue' },    // Linha para umidade
+                    1: { lineDashStyle: [2, 2], color: 'green' },   // Linha para umidade ideal (0.42 kPa)
+                    2: { lineDashStyle: [2, 2], color: 'purple'},  // Linha para umidade ideal (0.57 kPa)
+                    3: { lineDashStyle: [2, 2], color: 'green' },    // Linha para umidade ideal (0.73 kPa)
                 }
             };
             const chart = new google.visualization.LineChart(document.getElementById('div_chart_humid_vpd'));
             chart.draw(dataTable, options);
         }
 
+        //==================== CHART VPDS ====================
         function drawVpdChart(data) {
             const formattedData = data.map(item => [
                 new Date(item.timestamp),
@@ -154,7 +185,7 @@
             dataTable.addRows(formattedData);
 
             const options = {
-                title: 'Temperatura/Umidade com VPD',
+                title: 'VPD',
                 legend: { position: 'bottom' },
                 hAxis: {
                   title: 'Hora'
@@ -175,31 +206,115 @@
             chart.draw(dataTable, options);
         }
 
+        //==================== CHART ECO2 PPM====================
+        function drawEco2Chart(data) {
+            const formattedData = data.map(item => [
+                new Date(item.timestamp),
+                item.eco2,
+                400,
+                800,
+                1200
+            ]);
+
+            const dataTable = new google.visualization.DataTable();
+            dataTable.addColumn('datetime', 'Hora');
+            dataTable.addColumn('number', 'eCO2 PPM');
+            dataTable.addColumn('number', 'Bom');
+            dataTable.addColumn('number', 'Médio');
+            dataTable.addColumn('number', 'Ruim');
+            dataTable.addRows(formattedData);
+
+            const options = {
+                title: 'eCO2 PPM',
+                legend: { position: 'bottom' },
+                hAxis: { title: 'Hora' },
+                vAxis: { title: 'Valores' },
+                series: {
+                    0: { color: 'blue' },
+                    1: { lineDashStyle: [4, 4], color: 'green' },
+                    2: { lineDashStyle: [4, 4], color: 'orange' },
+                    3: { lineDashStyle: [4, 4], color: 'red' },
+                }
+            };
+
+            const chart = new google.visualization.LineChart(document.getElementById('div_chart_eco2'));
+            chart.draw(dataTable, options);
+        }
+
+        //==================== CHART ETVOC PPB ====================
+        function drawEvtocChart(data) {
+            const formattedData = data.map(item => [
+                new Date(item.timestamp),
+                item.etvoc,
+                200,
+                500,
+                700
+            ]);
+
+            const dataTable = new google.visualization.DataTable();
+            dataTable.addColumn('datetime', 'Hora');
+            dataTable.addColumn('number', 'eTVOC PPB');
+            dataTable.addColumn('number', 'Bom');
+            dataTable.addColumn('number', 'Médio');
+            dataTable.addColumn('number', 'Ruim');
+            dataTable.addRows(formattedData);
+
+            const options = {
+                title: 'eTVOC PPB',
+                legend: { position: 'bottom' },
+                hAxis: { title: 'Hora' },
+                vAxis: { title: 'Valores' },
+                series: {
+                    0: { color: 'blue' },
+                    1: { lineDashStyle: [4, 4], color: 'green' },
+                    2: { lineDashStyle: [4, 4], color: 'orange' },
+                    3: { lineDashStyle: [4, 4], color: 'red' },
+                }
+            };
+
+            const chart = new google.visualization.LineChart(document.getElementById('div_chart_etvoc'));
+            chart.draw(dataTable, options);
+        }
     </script>
 </head>
 <body>
-<div>
-    <h2>Informações sobre VPD</h2>
-    <p>Fase de Muda / Começo do Vegetativo: entre 0,42 e 0,73 kPA.</p>
-    <p>Final do Vegetativo / Começo da Floração: entre 0,64 e 1,06 kPA.</p>
-    <p>Meio e Final da Floração: entre 0.95 e 1,37 kPA.</p>
-    <p>VPD Atual: <span th:text="${valorVPD}"></span> kPA</p>
-    <p>Umidade Ideal: <span th:text="${idealHumidity}"></span>%</p>
+    <div>
+        <h2>Informações sobre VPD</h2>
+        <p>Fase de Muda / Começo do Vegetativo: entre 0,42 e 0,73 kPA.</p>
+        <p>Final do Vegetativo / Começo da Floração: entre 0,64 e 1,06 kPA.</p>
+        <p>Meio e Final da Floração: entre 0.95 e 1,37 kPA.</p>
+        <p>VPD Atual: <span th:text="${valorVPD}"></span> kPA</p>
+        <p>Umidade Ideal: <span th:text="${idealHumidity}"></span>%</p>
 
-    <h3>eCO₂ (Dióxido de Carbono Equivalente):</h3>
-    <p>Bom: 400 - 800 ppm</p>
-    <p>Médio: 800 - 1200 ppm</p>
-    <p>Ruim: Acima de 1200 ppm</p>
+        <h3>eCO₂ (Dióxido de Carbono Equivalente):</h3>
+        <p>Bom: 400 - 800 ppm</p>
+        <p>Médio: 800 - 1200 ppm</p>
+        <p>Ruim: Acima de 1200 ppm</p>
 
 
-    <h3>eTVOC (Compostos Orgânicos Voláteis Totais):</h3>
-    <p>Bom: 0 - 200 ppb</p>
-    <p>Médio: 200 - 500 ppb</p>
-    <p>Ruim: Acima de 500 ppb</p>
-</div>
-<div id="div_chart_temp" style="width: 1400px; height: 500px"></div>
-<div id="div_chart_humid" style="width: 1400px; height: 500px"></div>
-<div id="div_chart_humid_vpd" style="width: 1400px; height: 500px"></div>
-<div id="div_chart_vpd" style="width: 1400px; height: 500px"></div>
+        <h3>eTVOC (Compostos Orgânicos Voláteis Totais):</h3>
+        <p>Bom: 0 - 200 ppb</p>
+        <p>Médio: 200 - 500 ppb</p>
+        <p>Ruim: Acima de 500 ppb</p>
+    </div>
+
+    <div>
+        <h2>Informações sobre VPD</h2>
+    </div>
+    <div>
+        <label for="hoursSelect">Selecione o intervalo de horas:</label>
+        <select id="hoursSelect" onchange="updateCharts()">
+            <option value="24">24 horas</option>
+            <option value="12">12 horas</option>
+            <option value="6" selected>6 horas</option>
+            <option value="1">1 hora</option>
+        </select>
+    </div>
+    <div id="div_chart_temp" style="width: 1400px; height: 500px"></div>
+    <div id="div_chart_humid" style="width: 1400px; height: 500px"></div>
+    <div id="div_chart_humid_vpd" style="width: 1400px; height: 500px"></div>
+    <div id="div_chart_vpd" style="width: 1400px; height: 500px"></div>
+    <div id="div_chart_eco2" style="width: 1400px; height: 500px"></div>
+    <div id="div_chart_etvoc" style="width: 1400px; height: 500px"></div>
 </body>
 </html>

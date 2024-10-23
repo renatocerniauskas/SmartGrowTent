@@ -25,14 +25,17 @@ public class GrowValuesController {
     }
 
     @PostMapping
-    public ResponseEntity<GrowValues> postGrowValues(@RequestParam Double temperature, Double humidity) {
+    public ResponseEntity<GrowValues> postGrowValues(@RequestParam Double temperature, Double humidity,
+                                                     Double eco2, Double etvoc) {
         LocalDateTime localDateTime = LocalDateTime.now();
-        log.info("gravando dado na tabela: timestamp={} teperatura={} humidade={}", localDateTime, temperature, humidity);
+        log.info("gravando dado na tabela: timestamp={} teperatura={} humidade={} eco2={} etvoc={}", localDateTime, temperature, humidity, eco2, etvoc);
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 repository.save(GrowValues.builder()
                         .temperature(temperature)
                         .humidity(humidity)
                         .timestamp(localDateTime)
+                        .eco2(eco2)
+                        .etvoc(etvoc)
                         .build())
         );
     }

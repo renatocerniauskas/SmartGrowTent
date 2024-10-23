@@ -26,4 +26,11 @@ public class GrowValues implements Serializable {
     @JsonProperty("humidity")
     private Double humidity;
 
+    @Column(nullable = false)
+    @JsonProperty("eco2")
+    private Double eco2;
+
+    @Column(nullable = false)
+    @JsonProperty("etvoc")
+    private Double etvoc;
 }
